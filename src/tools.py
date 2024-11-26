@@ -28,3 +28,16 @@ def load_excel(file_path):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
     return pd.read_excel(file_path)
+
+def load_config(config_path):
+    """
+    Load the configuration file (YAML format).
+    
+    Args:
+        config_path (str): Path to the configuration file.
+    
+    Returns:
+        dict: Configuration data as a dictionary.
+    """
+    with open(config_path, 'r') as file:
+        return yaml.safe_load(file)
