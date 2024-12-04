@@ -137,7 +137,7 @@ def main():
         strata=strata
     )
 
-    st.subheader("HR та p-value для Лікувань")
+    st.subheader("HR та p-value для кожного типу Лікування")
     # Фільтрація результатів для лікувальних змінних
     cox_summary = cox_model.summary
     treatment_effects = cox_summary.loc[
@@ -146,16 +146,22 @@ def main():
     ].rename(columns={'exp(coef)': 'HR', 'p': 'p-value'})
 
     treatment_effects = treatment_effects.round(2)
-    treatment_effects['Коваріат'] = [
+    treatment_effects['Тип лікування'] = [
         covariate_mapping_ukrainian.get(var, var) for var in treatment_effects.index
     ]
 
-    st.dataframe(treatment_effects)
+
+    treatment_effects = treatment_effects.reset_index()
+
+
+    st.dataframe(treatment_effects[['HR', 'p-value', 'Тип лікування']])
+
+
 
     # Графік коефіцієнтів ризику
     st.subheader("Графік коефіцієнтів ризику (Hazard Ratios) для лікування")
     fig, ax = plt.subplots(figsize=(10, 6))
-    treatment_effects.set_index('Коваріат')['HR'].plot(kind='barh', ax=ax, color='skyblue')
+    treatment_effects.set_index('Тип лікування')['HR'].plot(kind='barh', ax=ax, color='skyblue')
     plt.axvline(1, color='red', linestyle='--', label='Відсутність ефекту')
     plt.title("Коефіцієнти ризику для груп лікування", fontsize=14)
     plt.xlabel("Коефіцієнт ризику (HR)", fontsize=12)
@@ -167,7 +173,7 @@ def main():
     # Графік p-значень
     st.subheader("Графік рівнів значущості (p-values) для лікування")
     fig, ax = plt.subplots(figsize=(10, 6))
-    treatment_effects.set_index('Коваріат')['p-value'].plot(kind='barh', ax=ax, color='salmon')
+    treatment_effects.set_index('Тип лікування')['p-value'].plot(kind='barh', ax=ax, color='salmon')
     plt.axvline(0.05, color='blue', linestyle='--', label='Рівень значущості 0.05')
     plt.title("Рівень значущості (p-значення) для груп лікування", fontsize=14)
     plt.xlabel("p-значення", fontsize=12)
@@ -177,20 +183,20 @@ def main():
     st.pyplot(fig)
 
     # Висновок
-    st.subheader("Висновки:")
+    st.subheader("Рекомендації:")
     for index, row in treatment_effects.iterrows():
-        treatment_name = row['Коваріат']
+        treatment_name = row['Тип лікування']
         hr = row['HR']
         p_value = row['p-value']
         if p_value < 0.05:
             if hr > 1:
-                conclusion = f"Лікування '{treatment_name}' збільшує ризик події, а саме, знаходження пацієнта в ліжку більше середнього значення. Не рекомандуємо додавати цей препарат в курс лікування. (HR = {hr:.2f}, p < 0.05)."
+                conclusion = f"Лікування '{treatment_name}' збільшує ризик події, а саме, знаходження пацієнта в ліжку більше середнього значення. Не рекомандуємо додавати цей препарат в курс лікування. (HR = {hr:.2f}, p-value = {p_value:.2f} p < 0.05)."
             elif hr < 1:
-                conclusion = f"Лікування '{treatment_name}' зменшує ризик події, а саме, знаходження пацієнта в ліжку більше середнього значення. Не рекомандуємо додавати цей препарат в курс лікування. (HR = {hr:.2f}, p < 0.05)."
+                conclusion = f"Лікування '{treatment_name}' зменшує ризик події, а саме, знаходження пацієнта в ліжку більше середнього значення. Не рекомандуємо додавати цей препарат в курс лікування. (HR = {hr:.2f}, p-value = {p_value:.2f} p < 0.05)."
             else:
-                conclusion = f"Лікування '{treatment_name}' не змінює ризик події (HR = {hr:.2f}, p < 0.05)."
+                conclusion = f"Лікування '{treatment_name}' не змінює ризик події (HR = {hr:.2f}, p-value = {p_value:.2f} p < 0.05)."
         else:
-            conclusion =  f"Лікування '{treatment_name}' не змінює ризик події, а саме, знаходження пацієнта в ліжку більше середнього значення. Не рекомандуємо додавати цей препарат в курс лікування. (HR = {hr:.2f}, p < 0.05)."
+            conclusion =  f"Лікування '{treatment_name}' не змінює ризик події, а саме, знаходження пацієнта в ліжку більше середнього значення. Не рекомандуємо додавати цей препарат в курс лікування. (HR = {hr:.2f}, p-value = {p_value:.2f} p > 0.05)."
         st.write(conclusion)
 
 if __name__ == "__main__":
